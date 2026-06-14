@@ -1,50 +1,124 @@
-# Welcome to your Expo app 👋
+# 🛹 SkateShop App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo mobile de e-commerce para uma loja de skate, desenvolvido em React Native com Expo.
 
-## Get started
+## 📱 Sobre o Projeto
 
-1. Install dependencies
+O SkateShop App foi criado para oferecer uma experiência completa de compra de produtos relacionados ao universo do skate. O aplicativo possui funcionalidades para clientes e administradores, permitindo navegação de produtos, gerenciamento de pedidos e administração do catálogo.
 
-   ```bash
-   npm install
-   ```
+## 🚀 Funcionalidades
 
-2. Start the app
+### Cliente
 
-   ```bash
-   npx expo start
-   ```
+* Login e cadastro de usuários
+* Visualização de produtos
+* Carrinho de compras
+* Checkout
+* Confirmação de pagamento
+* Rastreamento de pedidos
+* Perfil do usuário
+* Alteração de senha
 
-In the output, you'll find options to open the app in a
+### Administrador
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+* Login administrativo
+* Dashboard de gerenciamento de produtos
+* Cadastro de novos produtos
+* Edição de produtos
+* Exclusão de produtos
+* Controle de estoque
+* Controle de preços
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🛠 Tecnologias Utilizadas
 
-## Get a fresh project
+* React Native
+* Expo
+* React Navigation
+* Expo Vector Icons
+* JavaScript
+* React Hooks
 
-When you're ready, run:
+## 📂 Estrutura do Projeto
 
 ```bash
-npm run reset-project
+src/
+├── components/
+│   └── BottomMenu.js
+│
+├── navigation/
+│   ├── AppNavigator.js
+│   └── DrawerNavigator.js
+│
+├── screens/
+│   ├── LoginScreen.js
+│   ├── RegisterScreen.js
+│   ├── HomeScreen.js
+│   ├── CartScreen.js
+│   ├── CheckoutScreen.js
+│   ├── PaymentSuccessScreen.js
+│   ├── OrdersScreen.js
+│   ├── ProfileScreen.js
+│   ├── ChangePasswordScreen.js
+│   ├── AdminHomeScreen.js
+│   ├── AddProductScreen.js
+│   └── EditProductScreen.js
+│
+└── assets/
+    └── images/
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## ⚙️ Instalação
 
-## Learn more
+Clone o repositório:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+git clone https://github.com/JeanCDemarchi/skateshop.app.git
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Entre na pasta:
 
-## Join the community
+```bash
+cd skateshop.app
+```
 
-Join our community of developers creating universal apps.
+Instale as dependências:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm install
+```
+
+Execute o projeto:
+
+```bash
+npx expo start
+```
+
+## 🔐 Credenciais de Administrador
+
+Para acessar as funcionalidades administrativas:
+
+```txt
+E-mail: admin@email.com
+Senha: 1234
+```
+
+## 📸 Principais Telas
+
+* Login
+* Cadastro
+* Home
+* Carrinho
+* Checkout
+* Pagamento Confirmado
+* Pedidos
+* Perfil
+* Alteração de Senha
+* Administração de Produtos
+
+## 👨‍💻 Desenvolvedor
+
+Jean Carlos Demarchi
+
+## 📄 Licença
+
+Este projeto foi desenvolvido para fins acadêmicos e de aprendizado.
