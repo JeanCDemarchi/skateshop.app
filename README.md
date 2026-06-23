@@ -117,7 +117,12 @@ Senha: 1234
 
 ## 👨‍💻 Desenvolvedor
 
+Arthur Risson
+Caio De Prado
+Eduardo Menegazzo Riboli
 Jean Carlos Demarchi
+Vitor Valduga Modesti
+
 
 ## 📄 Licença
 
