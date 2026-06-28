@@ -1,24 +1,34 @@
-import { DrawerActions } from '@react-navigation/native';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function HeaderMenu({ navigation }) {
-  const openMenu = () => navigation.dispatch(DrawerActions.openDrawer());
+export default function HeaderMenu() {
+  const navigation = useNavigation();
 
   return (
     <>
       <View style={styles.header}>
-        <TouchableOpacity onPress={openMenu}>
+        <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu" size={42} color="#fff" />
         </TouchableOpacity>
+
         <Text style={styles.logo}>SKATESHOP</Text>
+
         <Ionicons name="search" size={38} color="#fff" />
       </View>
 
       <View style={styles.menu}>
-        <Text style={styles.menuText}>Novidades</Text>
-        <Text style={styles.menuText}>Sobre</Text>
-        <Text style={styles.menuText}>Contato</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Novidades')}>
+          <Text style={styles.menuText}>Novidades</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => navigation.navigate('Sobre')}>
+          <Text style={styles.menuText}>Sobre</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => navigation.navigate('Contato')}>
+          <Text style={styles.menuText}>Contato</Text>
+        </TouchableOpacity>
       </View>
     </>
   );
