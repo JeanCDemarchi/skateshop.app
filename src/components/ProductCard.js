@@ -1,16 +1,15 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 
-import { useCart } from '../context/CartContext';
 import { imagemPrincipal } from '../services/produtoService';
 import { formatarPreco } from '../utils/formatarPreco';
 
 export default function ProductCard({ item }) {
-  const { adicionarAoCarrinho } = useCart();
+  const navigation = useNavigation();
   const uri = imagemPrincipal(item);
 
-  function comprar() {
-    adicionarAoCarrinho(item, 1);
-    Alert.alert('Carrinho', `"${item.nome}" foi adicionado ao carrinho.`);
+  function verDetalhes() {
+    navigation.navigate('DetalheProduto', { id: item.id });
   }
 
   return (
@@ -23,7 +22,7 @@ export default function ProductCard({ item }) {
         R$ {formatarPreco(item.precoAtual)}
       </Text>
 
-      <TouchableOpacity style={styles.button} onPress={comprar}>
+      <TouchableOpacity style={styles.button} onPress={verDetalhes}>
         <Text style={styles.buttonText}>Comprar</Text>
       </TouchableOpacity>
     </View>

@@ -12,13 +12,21 @@ export default function HeaderMenu({ navigation }) {
           <Ionicons name="menu" size={42} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.logo}>SKATESHOP</Text>
-        <Ionicons name="search" size={38} color="#fff" />
+        <TouchableOpacity onPress={() => navigation.navigate('Busca')}>
+          <Ionicons name="search" size={38} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.menu}>
-        <Text style={styles.menuText}>Novidades</Text>
-        <Text style={styles.menuText}>Sobre</Text>
-        <Text style={styles.menuText}>Contato</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Novidades')}>
+          <Text style={styles.menuText}>Novidades</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Sobre')}>
+          <Text style={styles.menuText}>Sobre</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Contato')}>
+          <Text style={styles.menuText}>Contato</Text>
+        </TouchableOpacity>
       </View>
     </>
   );

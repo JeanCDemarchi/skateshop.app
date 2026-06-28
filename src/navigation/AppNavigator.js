@@ -10,7 +10,9 @@ import CheckoutScreen from '../screens/CheckoutScreen';
 import EditProductScreen from '../screens/EditProductScreen';
 import LoginScreen from '../screens/LoginScreen';
 import PaymentSuccessScreen from '../screens/PaymentSuccessScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import SearchScreen from '../screens/SearchScreen';
 import DrawerNavigator from './DrawerNavigator';
 
 const Stack = createNativeStackNavigator();
@@ -37,6 +39,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Cadastro" component={RegisterScreen} />
         <Stack.Screen name="App" component={DrawerNavigator} />
         <Stack.Screen name="AdminHome" component={AdminHomeScreen} />
+        <Stack.Screen name="DetalheProduto" component={ProductDetailScreen} />
+        <Stack.Screen name="Busca" component={SearchScreen} />
         <Stack.Screen name="EditarProduto" component={EditProductScreen} />
         <Stack.Screen name="AdicionarProduto" component={AddProductScreen} />
         <Stack.Screen name="AlterarSenha" component={ChangePasswordScreen} />

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 
@@ -55,6 +56,10 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={32} color="#000" />
+      </TouchableOpacity>
+
       <Text style={styles.title}>Cadastro</Text>
 
       <TextInput placeholder="User name" placeholderTextColor="#fff" style={styles.input}
@@ -89,6 +94,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     minHeight: '100%',
     paddingBottom: 60,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 45,
+    left: 20,
+    zIndex: 10,
+    padding: 4,
   },
   title: {
     fontSize: 42,
