@@ -1,17 +1,29 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+
+import { useCart } from '../context/CartContext';
+import { imagemPrincipal } from '../services/produtoService';
+import { formatarPreco } from '../utils/formatarPreco';
 
 export default function ProductCard({ item }) {
+  const { adicionarAoCarrinho } = useCart();
+  const uri = imagemPrincipal(item);
+
+  function comprar() {
+    adicionarAoCarrinho(item, 1);
+    Alert.alert('Carrinho', `"${item.nome}" foi adicionado ao carrinho.`);
+  }
+
   return (
     <View style={styles.card}>
-      <Image source={item.image} style={styles.image} />
+      <Image source={uri ? { uri } : undefined} style={styles.image} />
 
-      <Text style={styles.name}>{item.name}</Text>
+      <Text style={styles.name}>{item.nome}</Text>
 
       <Text style={styles.price}>
-        R$ {item.price}
+        R$ {formatarPreco(item.precoAtual)}
       </Text>
 
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={comprar}>
         <Text style={styles.buttonText}>Comprar</Text>
       </TouchableOpacity>
     </View>

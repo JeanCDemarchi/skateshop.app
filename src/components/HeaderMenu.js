@@ -1,11 +1,14 @@
+import { DrawerActions } from '@react-navigation/native';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function HeaderMenu({ navigation }) {
+  const openMenu = () => navigation.dispatch(DrawerActions.openDrawer());
+
   return (
     <>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
+        <TouchableOpacity onPress={openMenu}>
           <Ionicons name="menu" size={42} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.logo}>SKATESHOP</Text>

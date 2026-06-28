@@ -1,4 +1,9 @@
-import { createDrawerNavigator } from '@react-navigation/drawer';
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItem,
+  DrawerItemList,
+} from '@react-navigation/drawer';
 
 import CartScreen from '../screens/CartScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -7,9 +12,25 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Drawer = createDrawerNavigator();
 
+function CustomDrawerContent(props) {
+  const handleLogout = () =>
+    props.navigation.getParent()?.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+
+  return (
+    <DrawerContentScrollView {...props}>
+      <DrawerItemList {...props} />
+      <DrawerItem label="Sair" labelStyle={{ color: '#aaa' }} onPress={handleLogout} />
+    </DrawerContentScrollView>
+  );
+}
+
 export default function DrawerNavigator() {
   return (
     <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
         drawerStyle: {

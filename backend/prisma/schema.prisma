@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement()) @map("id_usuario")
+  username  String   @unique
+  nome      String
+  email     String   @unique
+  senha     String
+  endereco  String
+  cep       String
+  role      String   @default("cliente") @map("role")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  pedidos         Pedido[]
+  produtosCriados Produto[] @relation("ProdutoCriador")
+
+  @@map("usuario")
+}
+
+model Produto {
+  id           Int     @id @default(autoincrement()) @map("id_produto")
+  nome         String
+  descricao    String
+  precoAtual   Float   @map("preco_atual")
+  estoqueAtual Int     @map("estoque_atual")
+  destaque     Boolean @default(false)
+  fkIdCriador  Int?    @map("fk_id_criador")
+
+  criador     Usuario?        @relation("ProdutoCriador", fields: [fkIdCriador], references: [id])
+  imagens     ProdutoImagem[]
+  itensPedido ItemPedido[]
+
+  @@index([nome])
+  @@index([descricao])
+  @@map("produto")
+}
+
+model ProdutoImagem {
+  id          Int     @id @default(autoincrement()) @map("id_imagem")
+  fkIdProduto Int     @map("fk_id_produto")
+  url         String
+  principal   Boolean @default(false)
+
+  produto Produto @relation(fields: [fkIdProduto], references: [id], onDelete: Cascade)
+
+  @@map("produto_imagem")
+}
+
+model Pedido {
+  id          Int      @id @default(autoincrement()) @map("id_pedido")
+  dataPedido  DateTime @default(now()) @map("data_pedido")
+  status      String
+  valorTotal  Float    @map("valor_total")
+  fkIdUsuario Int      @map("fk_id_usuario")
+
+  usuario   Usuario      @relation(fields: [fkIdUsuario], references: [id])
+  envio     Envio?
+  pagamento Pagamento?
+  itens     ItemPedido[]
+
+  @@map("pedido")
+}
+
+model ItemPedido {
+  id                 Int   @id @default(autoincrement()) @map("id_item_pedido")
+  fkIdPedido         Int   @map("fk_id_pedido")
+  fkIdProduto        Int   @map("fk_id_produto")
+  quantidade         Int
+  precoUnitarioVenda Float @map("preco_unitario_venda")
+
+  pedido  Pedido  @relation(fields: [fkIdPedido], references: [id], onDelete: Cascade)
+  produto Produto @relation(fields: [fkIdProduto], references: [id])
+
+  @@map("item_pedido")
+}
+
+model Envio {
+  id             Int       @id @default(autoincrement()) @map("id_envio")
+  fkIdPedido     Int       @unique @map("fk_id_pedido")
+  codigoRastreio String?   @map("codigo_rastreio")
+  transportadora String?
+  dataPostagem   DateTime? @map("data_postagem")
+  statusEntrega  String?   @map("status_entrega")
+
+  pedido Pedido @relation(fields: [fkIdPedido], references: [id], onDelete: Cascade)
+
+  @@map("envio")
+}
+
+model Pagamento {
+  id                 Int       @id @default(autoincrement()) @map("id_pagamento")
+  fkIdPedido         Int       @unique @map("fk_id_pedido")
+  metodoPagamento    String    @map("metodo_pagamento")
+  statusTransacao    String    @map("status_transacao")
+  dataPagamento      DateTime? @map("data_pagamento")
+  idTransacaoGateway String?   @map("id_transacao_gateway")
+
+  pedido Pedido @relation(fields: [fkIdPedido], references: [id], onDelete: Cascade)
+
+  @@map("pagamento")
+}

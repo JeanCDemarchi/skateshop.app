@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import {
+  Alert,
   ImageBackground,
   StyleSheet,
   Text,
@@ -8,15 +9,28 @@ import {
   TouchableOpacity
 } from 'react-native';
 
-export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
+import { useAuth } from '../context/AuthContext';
 
-  function entrar() {
-    if (email === 'admin@email.com' && senha === '1234') {
-      navigation.navigate('AdminHome');
-    } else {
-      navigation.navigate('App');
+export default function LoginScreen({ navigation }) {
+  const { login } = useAuth();
+  const [usuario, setUsuario] = useState('');
+  const [senha, setSenha] = useState('');
+  const [carregando, setCarregando] = useState(false);
+
+  async function entrar() {
+    if (!usuario.trim() || !senha) {
+      Alert.alert('Atenção', 'Preencha usuário e senha.');
+      return;
+    }
+    try {
+      setCarregando(true);
+      const u = await login(usuario.trim(), senha);
+      const destino = u.role === 'admin' ? 'AdminHome' : 'App';
+      navigation.reset({ index: 0, routes: [{ name: destino }] });
+    } catch (e) {
+      Alert.alert('Erro ao entrar', e.message);
+    } finally {
+      setCarregando(false);
     }
   }
 
@@ -29,15 +43,17 @@ export default function LoginScreen({ navigation }) {
       <Text style={styles.logo}>SKATESHOP</Text>
 
       <TextInput
-        placeholder="E-mail"
-        value={email}
-        onChangeText={setEmail}
+        placeholder="Digite seu usuário"
+        value={usuario}
+        onChangeText={setUsuario}
+        autoCapitalize="none"
+        autoCorrect={false}
         placeholderTextColor="#555"
         style={styles.input}
       />
 
       <TextInput
-        placeholder="Senha"
+        placeholder="Digite sua senha"
         secureTextEntry
         value={senha}
         onChangeText={setSenha}
@@ -48,8 +64,9 @@ export default function LoginScreen({ navigation }) {
       <TouchableOpacity
         style={styles.button}
         onPress={entrar}
+        disabled={carregando}
       >
-        <Text style={styles.buttonText}>Entrar</Text>
+        <Text style={styles.buttonText}>{carregando ? 'Entrando...' : 'Entrar'}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity

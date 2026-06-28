@@ -44,9 +44,9 @@ export default function PaymentSuccessScreen({ navigation }) {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('Pedidos')}
+          onPress={() => navigation.navigate('App', { screen: 'Pedidos' })}
         >
-          <Text style={styles.buttonText}>Rastrear</Text>
+          <Text style={styles.buttonText}>Voltar ao inicio</Text>
         </TouchableOpacity>
       </View>
 

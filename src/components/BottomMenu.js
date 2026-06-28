@@ -7,19 +7,19 @@ export default function BottomMenu() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+      <TouchableOpacity onPress={() => navigation.navigate('App', { screen: 'Home' })}>
         <Ionicons name="home-outline" size={35} color="#fff" />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Pedidos')}>
+      <TouchableOpacity onPress={() => navigation.navigate('App', { screen: 'Pedidos' })}>
         <Ionicons name="notifications-outline" size={35} color="#fff" />
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Carrinho')}>
+      <TouchableOpacity onPress={() => navigation.navigate('App', { screen: 'Carrinho' })}>
         <Ionicons name="cart-outline" size={35} color="#fff" />
       </TouchableOpacity>
-    
-    <TouchableOpacity onPress={() => navigation.navigate('Perfil')}>
+
+    <TouchableOpacity onPress={() => navigation.navigate('App', { screen: 'Perfil' })}>
       <Ionicons name="person-outline" size={35} color="#fff" />
     </TouchableOpacity>
     </View>

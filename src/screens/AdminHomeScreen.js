@@ -1,142 +1,143 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
 import BottomMenu from '../components/BottomMenu';
-
-
+import { useAuth } from '../context/AuthContext';
+import {
+  excluirProduto as excluirProdutoApi,
+  imagemPrincipal,
+  listarProdutos,
+} from '../services/produtoService';
+import { extrairMensagemErro } from '../utils/erroApi';
+import { formatarPreco } from '../utils/formatarPreco';
 
 export default function AdminHomeScreen({ navigation }) {
-  const [products, setProducts] = useState([
-    {
-      id: '1',
-      name: 'Chave em T',
-      price: '39,90',
-      stock: 18,
-      image: require('../assets/images/tool.png'),
-    },
-    {
-      id: '2',
-      name: 'Truck Gold',
-      price: '499,90',
-      stock: 7,
-      image: require('../assets/images/truck.png'),
-    },
-    {
-      id: '#98761',
-      name: 'Lixa Emborrachada',
-      price: '99,90',
-      stock: 42,
-      image: require('../assets/images/lixa.png'),
-    },
-    {
-      id: '#18958',
-      name: 'Parafuso Bolts',
-      price: '24,90',
-      stock: 63,
-      image: require('../assets/images/bolts.png'),
-    },
-    {
-      id: '#88654',
-      name: 'Amortecedor PU',
-      price: '49,90',
-      stock: 25,
-      image: require('../assets/images/amortecedor.png'),
-    },
-    {
-      id: '#98898',
-      name: 'Kit Parafusos',
-      price: '39,90',
-      stock: 31,
-      image: require('../assets/images/paraf.png'),
-    },
-    {
-      id: '#45632',
-      name: 'Shape',
-      price: '359,90',
-      stock: 12,
-      image: require('../assets/images/shape.png'),
-    },
-  ]);
+  const { usuario } = useAuth();
+  const ehAdmin = usuario?.role === 'admin';
 
-  function adicionarProduto(novoProduto) {
-    setProducts((listaAtual) => [...listaAtual, novoProduto]);
-  }
+  const [products, setProducts] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
 
-  function atualizarProduto(produtoEditado) {
-    setProducts((listaAtual) =>
-        listaAtual.map((item) =>
-        item.id === produtoEditado.id ? produtoEditado : item
-        )
-    );
-  }
+  const carregarProdutos = useCallback(async () => {
+    try {
+      setCarregando(true);
+      setErro(null);
+      const dados = await listarProdutos();
+      setProducts(dados);
+    } catch (e) {
+      setErro('Não foi possível carregar os produtos.');
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
 
-  function excluirProduto(id) {
+  // Recarrega a lista sempre que a tela ganha foco (após criar/editar/excluir).
+  useFocusEffect(
+    useCallback(() => {
+      if (ehAdmin) carregarProdutos();
+    }, [ehAdmin, carregarProdutos])
+  );
+
+  function confirmarExclusao(item) {
     Alert.alert(
       'Excluir produto',
-      'Tem certeza que deseja excluir este produto?',
+      `Tem certeza que deseja excluir "${item.nome}"?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: () => {
-            setProducts(products.filter((item) => item.id !== id));
-          },
-        },
+        { text: 'Excluir', style: 'destructive', onPress: () => excluir(item.id) },
       ]
     );
   }
 
-  function editarProduto(produto) {
-  navigation.navigate('EditarProduto', {
-    produto,
-    atualizarProduto,
-  });
-}
+  async function excluir(id) {
+    try {
+      await excluirProdutoApi(id);
+      setProducts((atual) => atual.filter((p) => p.id !== id));
+      Alert.alert('Pronto', 'Produto excluído com sucesso.');
+    } catch (e) {
+      if (e?.response?.status === 409) {
+        // Produto vinculado a pedidos — não pode ser excluído.
+        Alert.alert(
+          'Não é possível excluir',
+          extrairMensagemErro(e, 'Este produto está vinculado a pedidos existentes.')
+        );
+      } else {
+        Alert.alert('Erro', extrairMensagemErro(e, 'Não foi possível excluir o produto.'));
+      }
+    }
+  }
+
+  // Bloqueio de acesso para não-admins.
+  if (!ehAdmin) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centro}>
+          <Text style={styles.restrito}>Acesso restrito a administradores.</Text>
+        </View>
+        <BottomMenu />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={products}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Image source={item.image} style={styles.image} />
+      {carregando ? (
+        <ActivityIndicator size="large" color="#000" style={{ marginTop: 40 }} />
+      ) : erro ? (
+        <Text style={styles.restrito}>{erro}</Text>
+      ) : (
+        <FlatList
+          data={products}
+          keyExtractor={(item) => String(item.id)}
+          ListEmptyComponent={<Text style={styles.restrito}>Nenhum produto cadastrado.</Text>}
+          renderItem={({ item }) => {
+            const uri = imagemPrincipal(item);
+            return (
+              <View style={styles.card}>
+                <Image source={uri ? { uri } : undefined} style={styles.image} />
 
-            <View style={styles.info}>
-              <Text>{item.name}</Text>
-              <Text>{item.code}</Text>
-              <Text>{item.stock} unidades</Text>
-              <Text>R$ {item.price}</Text>
-            </View>
+                <View style={styles.info}>
+                  <Text>{item.nome}</Text>
+                  <Text>{item.estoqueAtual} unidades</Text>
+                  <Text>R$ {formatarPreco(item.precoAtual)}</Text>
+                </View>
 
-            <View style={styles.actions}>
-              <TouchableOpacity onPress={() => excluirProduto(item.id)}>
-                <Ionicons name="trash-outline" size={24} color="#000" />
-              </TouchableOpacity>
+                <View style={styles.actions}>
+                  <TouchableOpacity onPress={() => confirmarExclusao(item)}>
+                    <Ionicons name="trash-outline" size={24} color="#000" />
+                  </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => editarProduto(item)}>
-                <Ionicons name="pencil-outline" size={24} color="#000" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      />
-        <TouchableOpacity
+                  <TouchableOpacity onPress={() => navigation.navigate('EditarProduto', { produto: item })}>
+                    <Ionicons name="pencil-outline" size={24} color="#000" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }}
+        />
+      )}
+
+      <TouchableOpacity
         style={styles.addButton}
-        onPress={() =>
-            navigation.navigate('AdicionarProduto', {
-            adicionarProduto,
-            })
-        }
-        >
+        onPress={() => navigation.navigate('AdicionarProduto')}
+      >
         <Ionicons name="add" size={38} color="#fff" />
       </TouchableOpacity>
-      
 
       <BottomMenu />
     </View>
-    
   );
 }
 
@@ -144,6 +145,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+
+  centro: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  restrito: {
+    textAlign: 'center',
+    marginTop: 40,
+    fontSize: 16,
+    color: '#555',
+    paddingHorizontal: 20,
   },
 
   card: {
