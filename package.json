@@ -59,9 +59,11 @@
       "<rootDir>/backend/"
     ],
     "collectCoverageFrom": [
-      "src/utils/**/*.js",
-      "src/services/**/*.js",
-      "src/context/**/*.js"
+      "src/**/*.js",
+      "App.js",
+      "index.js",
+      "!src/**/*.test.js",
+      "!src/assets/**"
     ]
   }
 }
