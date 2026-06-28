@@ -1,10 +1,11 @@
 import React from 'react';
 import { Alert } from 'react-native';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import api from '../services/api';
 import * as produtos from '../services/produtoService';
+import { selecionarImagens } from '../utils/imagePicker';
 
 import CartScreen from './CartScreen';
 import CheckoutScreen from './CheckoutScreen';
@@ -177,5 +178,165 @@ test('EditProductScreen informa quando não há alterações', async () => {
   expect(Alert.alert).toHaveBeenCalledWith(
     'Editar produto',
     'Nenhuma alteração para salvar.'
+  );
+});
+
+test.each([
+  ['Shape', '   ', 'O nome não pode ficar vazio.'],
+  ['100', '0', 'Informe um preço válido (maior que 0).'],
+  ['3', '-1', 'Informe um estoque válido (inteiro, 0 ou mais).'],
+])('EditProductScreen valida alteração de %s', async (atual, novo, mensagem) => {
+  const tela = await render(
+    <EditProductScreen route={{ params: { produto } }} navigation={navigation} />
+  );
+  await fireEvent.changeText(tela.getByDisplayValue(atual), novo);
+  await fireEvent.press(tela.getByText('Salvar alterações'));
+  expect(Alert.alert).toHaveBeenCalledWith('Atenção', mensagem);
+});
+
+test('EditProductScreen salva JSON com preço brasileiro', async () => {
+  produtos.atualizarProduto.mockResolvedValue({});
+  const tela = await render(
+    <EditProductScreen route={{ params: { produto } }} navigation={navigation} />
+  );
+  await fireEvent.changeText(tela.getByDisplayValue('Shape'), ' Shape Pro ');
+  await fireEvent.changeText(tela.getByDisplayValue('100'), '1.234,50');
+  await fireEvent.changeText(tela.getByDisplayValue('3'), '8');
+  await fireEvent.press(tela.getByText('Salvar alterações'));
+  await waitFor(() =>
+    expect(produtos.atualizarProduto).toHaveBeenCalledWith(
+      1,
+      { nome: 'Shape Pro', precoAtual: 1234.5, estoqueAtual: 8 },
+      false
+    )
+  );
+  expect(navigation.goBack).toHaveBeenCalled();
+});
+
+test('EditProductScreen seleciona foto e salva multipart', async () => {
+  selecionarImagens.mockResolvedValue({ assets: [{ uri: 'file:///ficticia.png' }] });
+  produtos.atualizarProduto.mockResolvedValue({});
+  const tela = await render(
+    <EditProductScreen route={{ params: { produto } }} navigation={navigation} />
+  );
+  await fireEvent.press(tela.getByText('Adicionar novas fotos'));
+  await waitFor(() => expect(tela.getByText('1 nova(s) foto(s)')).toBeTruthy());
+  await fireEvent.press(tela.getByText('Salvar alterações'));
+  await waitFor(() =>
+    expect(produtos.atualizarProduto).toHaveBeenCalledWith(1, expect.any(FormData), true)
+  );
+});
+
+test.each([
+  [{ erro: 'Permissão negada' }, true],
+  [{ assets: [] }, false],
+])('EditProductScreen trata seletor %p', async (retorno, alerta) => {
+  selecionarImagens.mockResolvedValue(retorno);
+  const tela = await render(
+    <EditProductScreen route={{ params: { produto } }} navigation={navigation} />
+  );
+  await fireEvent.press(tela.getByText('Adicionar novas fotos'));
+  alerta
+    ? expect(Alert.alert).toHaveBeenCalledWith('Atenção', 'Permissão negada')
+    : expect(tela.getByText('Adicionar novas fotos')).toBeTruthy();
+});
+
+test.each([
+  [{ response: { status: 404 } }, ['Não encontrado', 'Este produto não existe mais.']],
+  [new Error('falha'), ['Erro', 'Não foi possível editar o produto.']],
+])('EditProductScreen recupera erro', async (falha, alerta) => {
+  produtos.atualizarProduto.mockRejectedValue(falha);
+  const tela = await render(
+    <EditProductScreen route={{ params: { produto } }} navigation={navigation} />
+  );
+  await fireEvent.changeText(tela.getByDisplayValue('Shape'), 'Outro');
+  await fireEvent.press(tela.getByText('Salvar alterações'));
+  await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith(...alerta));
+});
+
+test('AddProductScreen confirma exclusão e executa callback', async () => {
+  const tela = await render(<AddProductScreen navigation={navigation} />);
+  await fireEvent.press(tela.getAllByText('trash-outline')[0]);
+  const chamada = Alert.alert.mock.calls.find(([titulo]) => titulo === 'Excluir produto');
+  expect(chamada[2][0]).toMatchObject({ text: 'Cancelar', style: 'cancel' });
+  await act(() => chamada[2][1].onPress());
+  await waitFor(() => expect(tela.queryByText('Chave em T')).toBeNull());
+});
+
+test('AddProductScreen callbacks adicionam e atualizam itens', async () => {
+  const tela = await render(<AddProductScreen navigation={navigation} />);
+  await fireEvent.press(tela.getAllByText('pencil-outline')[0]);
+  const editar = navigation.navigate.mock.calls.find(([rota]) => rota === 'EditarProduto');
+  await act(() =>
+    editar[1].atualizarProduto({ ...editar[1].produto, name: 'Atualizado' })
+  );
+  await waitFor(() => expect(tela.getByText('Atualizado')).toBeTruthy());
+  await fireEvent.press(tela.getByText('add'));
+  const adicionar = navigation.navigate.mock.calls.find(
+    ([rota]) => rota === 'AdicionarProduto'
+  );
+  await act(() =>
+    adicionar[1].adicionarProduto({ id: 'novo', name: 'Novo', price: '1', stock: 1 })
+  );
+  await waitFor(() => expect(tela.getByText('Novo')).toBeTruthy());
+});
+
+test.each([
+  [[], 'Nenhum produto cadastrado.'],
+  [new Error('falha'), 'Não foi possível carregar os produtos.'],
+])('AdminHomeScreen trata carregamento %p', async (resultado, texto) => {
+  useAuth.mockReturnValue({ usuario: { role: 'admin' } });
+  resultado instanceof Error
+    ? produtos.listarProdutos.mockRejectedValue(resultado)
+    : produtos.listarProdutos.mockResolvedValue(resultado);
+  const tela = await render(<AdminHomeScreen navigation={navigation} />);
+  await waitFor(() => expect(tela.getByText(texto)).toBeTruthy());
+});
+
+test.each([
+  [null, ['Pronto', 'Produto excluído com sucesso.']],
+  [
+    { response: { status: 409, data: { error: 'Produto vinculado' } } },
+    ['Não é possível excluir', 'Produto vinculado'],
+  ],
+  [new Error('falha'), ['Erro', 'Não foi possível excluir o produto.']],
+])('AdminHomeScreen trata exclusão', async (falha, alerta) => {
+  useAuth.mockReturnValue({ usuario: { role: 'admin' } });
+  produtos.listarProdutos.mockResolvedValue([produto]);
+  falha
+    ? produtos.excluirProduto.mockRejectedValue(falha)
+    : produtos.excluirProduto.mockResolvedValue({});
+  const tela = await render(<AdminHomeScreen navigation={navigation} />);
+  await waitFor(() => expect(tela.getByText('Shape')).toBeTruthy());
+  await fireEvent.press(tela.getByText('trash-outline'));
+  const chamada = Alert.alert.mock.calls.find(([titulo]) => titulo === 'Excluir produto');
+  chamada[2][1].onPress();
+  await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith(...alerta));
+});
+
+test('Checkout trata carrinho vazio, voltar e erro do pedido', async () => {
+  useAuth.mockReturnValue({ usuario: { id: 7 } });
+  useCart.mockReturnValue({ itens: [], valorTotal: 0, limparCarrinho: jest.fn() });
+  produtos.listarSugestoes.mockRejectedValue(new Error('silencioso'));
+  const vazia = await render(<CheckoutScreen navigation={navigation} />);
+  await fireEvent.press(vazia.getByText('arrow-back'));
+  await fireEvent.press(vazia.getAllByText('Finalizar compra').at(-1));
+  expect(navigation.goBack).toHaveBeenCalled();
+  expect(Alert.alert).toHaveBeenCalledWith(
+    'Carrinho vazio',
+    'Adicione produtos antes de finalizar.'
+  );
+
+  useCart.mockReturnValue({
+    itens: [{ produto, quantidade: 1 }],
+    valorTotal: 100,
+    limparCarrinho: jest.fn(),
+  });
+  api.post.mockRejectedValue({ response: { data: { error: 'Sem estoque' } } });
+  const tela = await render(<CheckoutScreen navigation={navigation} />);
+  await fireEvent.press(tela.getByText('Boleto'));
+  await fireEvent.press(tela.getAllByText('Finalizar compra').at(-1));
+  await waitFor(() =>
+    expect(Alert.alert).toHaveBeenCalledWith('Não foi possível finalizar', 'Sem estoque')
   );
 });
