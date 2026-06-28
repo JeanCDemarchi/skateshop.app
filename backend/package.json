@@ -43,7 +43,8 @@
       "src/utils/**/*.js",
       "src/middlewares/**/*.js",
       "src/services/**/*.js",
-      "src/controllers/**/*.js"
+      "src/controllers/**/*.js",
+      "src/config/**/*.js"
     ]
   }
 }
