@@ -26,6 +26,12 @@ jest.mock('@react-navigation/native-stack', () => ({
   }),
 }));
 jest.mock('@react-navigation/drawer', () => ({
+  DrawerContentScrollView: ({ children }) => {
+    const { View } = require('react-native');
+    return <View>{children}</View>;
+  },
+  DrawerItem: () => null,
+  DrawerItemList: () => null,
   createDrawerNavigator: () => ({
     Navigator: ({ children }) => {
       const { View } = require('react-native');
@@ -39,9 +45,18 @@ jest.mock('@react-navigation/drawer', () => ({
   }),
 }));
 
+jest.mock('../context/AuthContext', () => ({
+  useAuth: jest.fn(() => ({ usuario: null, carregando: false })),
+}));
+jest.mock('@expo/vector-icons', () => {
+  const { Text } = require('react-native');
+  return { Ionicons: ({ name }) => <Text>{name}</Text> };
+});
 jest.mock('../screens/LoginScreen', () => () => null);
 jest.mock('../screens/RegisterScreen', () => () => null);
 jest.mock('../screens/AdminHomeScreen', () => () => null);
+jest.mock('../screens/ProductDetailScreen', () => () => null);
+jest.mock('../screens/SearchScreen', () => () => null);
 jest.mock('../screens/EditProductScreen', () => () => null);
 jest.mock('../screens/AddProductScreen', () => () => null);
 jest.mock('../screens/ChangePasswordScreen', () => () => null);
@@ -63,13 +78,13 @@ test('AppNavigator declara stack e rota inicial', async () => {
     'Cadastro',
     'App',
     'AdminHome',
+    'DetalheProduto',
+    'Busca',
     'EditarProduto',
     'AdicionarProduto',
     'AlterarSenha',
     'Checkout',
     'PagamentoConfirmado',
-    'Pedidos',
-    'Sobre',
   ]);
 });
 
@@ -77,10 +92,10 @@ test('DrawerNavigator declara todas as áreas atuais', async () => {
   await render(<DrawerNavigator />);
   expect(mockDrawerScreens.map((s) => s.name)).toEqual([
     'Home',
+    'Novidades',
     'Pedidos',
     'Carrinho',
     'Perfil',
-    'Novidades',
     'Sobre',
     'Contato',
   ]);

@@ -4,6 +4,7 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import api from '../services/api';
+import * as pedidos from '../services/pedidoService';
 import * as produtos from '../services/produtoService';
 import { selecionarImagens } from '../utils/imagePicker';
 
@@ -41,11 +42,16 @@ jest.mock('../context/AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('../context/CartContext', () => ({ useCart: jest.fn() }));
 jest.mock('../services/api', () => ({
   __esModule: true,
-  default: { post: jest.fn() },
+  default: { post: jest.fn(), get: jest.fn() },
+}));
+jest.mock('../services/pedidoService', () => ({
+  listarPedidos: jest.fn(),
+  obterPedido: jest.fn(),
 }));
 jest.mock('../services/produtoService', () => ({
   listarProdutos: jest.fn(),
   listarSugestoes: jest.fn(),
+  criarProduto: jest.fn(),
   excluirProduto: jest.fn(),
   atualizarProduto: jest.fn(),
   imagemPrincipal: jest.fn(() => 'https://imagem.ficticia/item.png'),
@@ -62,8 +68,11 @@ const navigation = {
 const produto = { id: 1, nome: 'Shape', precoAtual: 100, estoqueAtual: 3 };
 
 beforeEach(() => {
+  jest.clearAllMocks();
   jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+  useAuth.mockReturnValue({ usuario: { id: 7, role: 'cliente' } });
   produtos.listarSugestoes.mockResolvedValue([]);
+  pedidos.listarPedidos.mockResolvedValue([]);
 });
 
 test('CartScreen mostra estado vazio', async () => {
@@ -132,8 +141,34 @@ test('PaymentSuccessScreen volta aos pedidos', async () => {
 });
 
 test('OrdersScreen renderiza os pedidos locais', async () => {
+  pedidos.listarPedidos.mockResolvedValue([
+    {
+      id: 58466,
+      dataPedido: '2026-06-27T12:00:00.000Z',
+      valorTotal: 100,
+      status: 'Enviado',
+      envio: { statusEntrega: 'Em transporte' },
+      itens: [{ quantidade: 1, produto }],
+    },
+    {
+      id: 58467,
+      dataPedido: '2026-06-28T12:00:00.000Z',
+      valorTotal: 200,
+      status: 'Separando',
+      envio: { statusEntrega: 'Separando' },
+      itens: [{ quantidade: 2, produto }],
+    },
+    {
+      id: 58468,
+      dataPedido: '2026-06-29T12:00:00.000Z',
+      valorTotal: 300,
+      status: 'Entregue',
+      envio: { statusEntrega: 'Entregue' },
+      itens: [{ quantidade: 3, produto }],
+    },
+  ]);
   const tela = await render(<OrdersScreen navigation={navigation} />);
-  expect(tela.getByText('#58466')).toBeTruthy();
+  await waitFor(() => expect(tela.getByText('Pedido #58466')).toBeTruthy());
   expect(tela.getAllByText('Rastrear')).toHaveLength(3);
 });
 
@@ -155,19 +190,11 @@ test('AdminHomeScreen lista produtos e abre edição/criação', async () => {
   expect(navigation.navigate).toHaveBeenCalledWith('AdicionarProduto');
 });
 
-test('AddProductScreen renderiza inventário e ações locais', async () => {
+test('AddProductScreen renderiza formulário de cadastro', async () => {
   const tela = await render(<AddProductScreen navigation={navigation} />);
-  expect(tela.getByText('Chave em T')).toBeTruthy();
-  await fireEvent.press(tela.getAllByText('pencil-outline')[0]);
-  expect(navigation.navigate).toHaveBeenCalledWith(
-    'EditarProduto',
-    expect.objectContaining({ produto: expect.objectContaining({ id: '1' }) })
-  );
-  await fireEvent.press(tela.getByText('add'));
-  expect(navigation.navigate).toHaveBeenCalledWith(
-    'AdicionarProduto',
-    expect.objectContaining({ adicionarProduto: expect.any(Function) })
-  );
+  expect(tela.getByText('Nome e descrição')).toBeTruthy();
+  expect(tela.getByPlaceholderText('Nome')).toBeTruthy();
+  expect(tela.getByText('Adicionar produto')).toBeTruthy();
 });
 
 test('EditProductScreen informa quando não há alterações', async () => {
@@ -254,31 +281,26 @@ test.each([
   await waitFor(() => expect(Alert.alert).toHaveBeenCalledWith(...alerta));
 });
 
-test('AddProductScreen confirma exclusão e executa callback', async () => {
+test('AddProductScreen valida campos obrigatórios', async () => {
   const tela = await render(<AddProductScreen navigation={navigation} />);
-  await fireEvent.press(tela.getAllByText('trash-outline')[0]);
-  const chamada = Alert.alert.mock.calls.find(([titulo]) => titulo === 'Excluir produto');
-  expect(chamada[2][0]).toMatchObject({ text: 'Cancelar', style: 'cancel' });
-  await act(() => chamada[2][1].onPress());
-  await waitFor(() => expect(tela.queryByText('Chave em T')).toBeNull());
+  await fireEvent.press(tela.getByText('Adicionar produto'));
+  expect(Alert.alert).toHaveBeenCalledWith('Atenção', 'Preencha nome e descrição.');
 });
 
-test('AddProductScreen callbacks adicionam e atualizam itens', async () => {
+test('AddProductScreen seleciona foto e cria produto', async () => {
+  selecionarImagens.mockResolvedValue({ assets: [{ uri: 'file:///produto.png' }] });
+  produtos.criarProduto.mockResolvedValue({ id: 9 });
   const tela = await render(<AddProductScreen navigation={navigation} />);
-  await fireEvent.press(tela.getAllByText('pencil-outline')[0]);
-  const editar = navigation.navigate.mock.calls.find(([rota]) => rota === 'EditarProduto');
-  await act(() =>
-    editar[1].atualizarProduto({ ...editar[1].produto, name: 'Atualizado' })
-  );
-  await waitFor(() => expect(tela.getByText('Atualizado')).toBeTruthy());
-  await fireEvent.press(tela.getByText('add'));
-  const adicionar = navigation.navigate.mock.calls.find(
-    ([rota]) => rota === 'AdicionarProduto'
-  );
-  await act(() =>
-    adicionar[1].adicionarProduto({ id: 'novo', name: 'Novo', price: '1', stock: 1 })
-  );
-  await waitFor(() => expect(tela.getByText('Novo')).toBeTruthy());
+  await fireEvent.changeText(tela.getByPlaceholderText('Nome'), 'Shape novo');
+  await fireEvent.changeText(tela.getByPlaceholderText('Descrição'), 'Shape completo');
+  await fireEvent.changeText(tela.getByPlaceholderText('R$ 0,00'), '199,90');
+  await fireEvent.changeText(tela.getByPlaceholderText('0'), '5');
+  await fireEvent.press(tela.getByText('Selecione fotos do produto'));
+  await waitFor(() => expect(tela.getByText('1 foto(s) selecionada(s)')).toBeTruthy());
+  await fireEvent.press(tela.getByText('Adicionar produto'));
+  await waitFor(() => expect(produtos.criarProduto).toHaveBeenCalledWith(expect.any(FormData)));
+  expect(Alert.alert).toHaveBeenCalledWith('Sucesso', 'Produto adicionado com sucesso!');
+  expect(navigation.goBack).toHaveBeenCalled();
 });
 
 test.each([

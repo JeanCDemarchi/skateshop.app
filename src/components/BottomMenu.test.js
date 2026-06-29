@@ -22,9 +22,9 @@ test('navega para as quatro áreas principais', async () => {
     await fireEvent.press(tela.getByText(icone));
   }
   expect(navigation.navigate.mock.calls).toEqual([
-    ['Home'],
-    ['Pedidos'],
-    ['Carrinho'],
-    ['Perfil'],
+    ['App', { screen: 'Home' }],
+    ['App', { screen: 'Pedidos' }],
+    ['App', { screen: 'Carrinho' }],
+    ['App', { screen: 'Perfil' }],
   ]);
 });
